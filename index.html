@@ -7,28 +7,37 @@
 <style>
 body{font-family:sans-serif;display:flex;flex-direction:column;height:100vh;margin:0}
 #chatTitle{padding:1rem;text-align:center;background:#f5f5f5;margin:0;font-size:1.5rem}
-#titleInput, #titleBtn{margin:0.5rem;padding:.5rem}
+#titleInput,#titleBtn{margin:0.5rem;padding:.5rem}
+#groupSelect{margin:0.5rem;padding:.5rem}
 #messages{flex:1;overflow:auto;padding:1rem}
 form{display:flex;padding:1rem;gap:.5rem}
-input,button{padding:.5rem}
+input,button,select{padding:.5rem}
 .msg{margin-bottom:.5rem;border-radius:5px;padding:.3rem;background:#eee}
 #onlineUsers{padding:.5rem;text-align:center;background:#f0f0f0;font-size:0.9rem}
 </style>
 </head>
 <body>
 
-<!-- Τίτλος και input για αλλαγή τίτλου -->
 <h1 id="chatTitle">Το Chat του Tolis</h1>
+
 <div style="text-align:center">
   <input id="titleInput" placeholder="Γράψε τίτλο..." />
   <button id="titleBtn">Αλλαγή Τίτλου</button>
 </div>
 
-<!-- Online users -->
+<div style="text-align:center">
+  <label>Group:</label>
+  <select id="groupSelect">
+    <option value="general">General</option>
+    <option value="gaming">Gaming</option>
+    <option value="random">Random</option>
+  </select>
+</div>
+
 <div id="onlineUsers">Online: </div>
 
-<!-- Chat messages -->
 <div id="messages"></div>
+
 <form id="sendForm">
   <input id="name" placeholder="Όνομα" required />
   <input id="text" placeholder="Μήνυμα" required />
@@ -62,32 +71,32 @@ const titleEl = document.getElementById('chatTitle');
 const titleInput = document.getElementById('titleInput');
 const titleBtn = document.getElementById('titleBtn');
 const onlineEl = document.getElementById('onlineUsers');
+const groupSelect = document.getElementById('groupSelect');
 
-// Change title dynamically
+let onlineRef;
+let userColor;
+
+// Change chat title
 titleBtn.addEventListener('click', ()=>{
   const newTitle = titleInput.value.trim();
   if(newTitle) titleEl.textContent = newTitle;
 });
 
-// References
-const msgsRef = ref(db, 'messages');
-let onlineRef;
+// Random color function
+function getRandomColor() {
+  const colors = ['#e6194b','#3cb44b','#ffe119','#4363d8','#f58231','#911eb4','#46f0f0','#f032e6','#bcf60c','#fabebe'];
+  return colors[Math.floor(Math.random()*colors.length)];
+}
 
-// Load messages
-onChildAdded(msgsRef, (snap)=>{
-  const m = snap.val();
-  const div = document.createElement('div');
-  div.className='msg';
-  div.textContent=`${m.name}: ${m.text}`;
-  messagesEl.appendChild(div);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
-});
-
-// Load online users
-const onlineListRef = ref(db, 'online');
-onValue(onlineListRef, snap=>{
-  const users = snap.exists() ? Object.keys(snap.val()) : [];
-  onlineEl.textContent = 'Online: ' + users.join(', ');
+// Online presence
+nameInp.addEventListener('change', ()=>{
+  const name = nameInp.value.trim()||'Guest';
+  if(!onlineRef) {
+    userColor = getRandomColor();
+    onlineRef = ref(db, 'online/' + name);
+    set(onlineRef, { color: userColor, online: true });
+    onDisconnect(onlineRef).remove();
+  }
 });
 
 // Send message
@@ -96,15 +105,46 @@ sendForm.addEventListener('submit', e=>{
   const name = nameInp.value.trim()||'Guest';
   const text = textInp.value.trim();
   if(!text) return;
-  push(msgsRef, {name,text});
-  textInp.value='';
 
-  // Online presence
-  if(!onlineRef) {
-    onlineRef = ref(db, 'online/' + name);
-    set(onlineRef, true);
-    onDisconnect(onlineRef).remove();
-  }
+  const group = groupSelect.value;
+  const msgsRef = ref(db, 'groups/' + group);
+  push(msgsRef, { name, text });
+
+  textInp.value='';
+});
+
+// Load messages live for selected group
+function loadGroupMessages(group){
+  messagesEl.innerHTML = ''; // καθαρίζει προηγούμενα
+  const msgsRef = ref(db, 'groups/' + group);
+  onChildAdded(msgsRef, snap=>{
+    const m = snap.val();
+    const div = document.createElement('div');
+    div.className='msg';
+    // Πάρε χρώμα χρήστη αν υπάρχει
+    onValue(ref(db, 'online/' + m.name), snapColor=>{
+      const color = snapColor.exists() ? snapColor.val().color : '#000';
+      div.style.color = color;
+    });
+    div.textContent = `${m.name}: ${m.text}`;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  });
+}
+
+// Αρχικά φορτώνουμε το default group
+loadGroupMessages(groupSelect.value);
+
+// Αν αλλάξει group, φορτώνουμε τα μηνύματα του νέου
+groupSelect.addEventListener('change', ()=>{
+  loadGroupMessages(groupSelect.value);
+});
+
+// Online users live
+const onlineListRef = ref(db, 'online');
+onValue(onlineListRef, snap=>{
+  const users = snap.exists() ? Object.entries(snap.val()).map(([name, val])=>`${name}`) : [];
+  onlineEl.textContent = 'Online: ' + users.join(', ');
 });
 </script>
 </body>
