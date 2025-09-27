@@ -12,17 +12,22 @@ body{font-family:sans-serif;display:flex;flex-direction:column;height:100vh;marg
 form{display:flex;padding:1rem;gap:.5rem}
 input,button{padding:.5rem}
 .msg{margin-bottom:.5rem;border-radius:5px;padding:.3rem;background:#eee}
+#onlineUsers{padding:.5rem;text-align:center;background:#f0f0f0;font-size:0.9rem}
 </style>
 </head>
 <body>
 
 <!-- Τίτλος και input για αλλαγή τίτλου -->
-<h1 id="chatTitle">TMG Chat </h1>
+<h1 id="chatTitle">Το Chat του Tolis</h1>
 <div style="text-align:center">
   <input id="titleInput" placeholder="Γράψε τίτλο..." />
-  <button id="titleBtn">Change Title</button>
+  <button id="titleBtn">Αλλαγή Τίτλου</button>
 </div>
 
+<!-- Online users -->
+<div id="onlineUsers">Online: </div>
+
+<!-- Chat messages -->
 <div id="messages"></div>
 <form id="sendForm">
   <input id="name" placeholder="Όνομα" required />
@@ -32,7 +37,7 @@ input,button{padding:.5rem}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, push, onChildAdded, onValue, set, onDisconnect } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 // Firebase config
 const firebaseConfig = {
@@ -47,7 +52,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const msgsRef = ref(db, 'messages');
 
 // Elements
 const messagesEl = document.getElementById('messages');
@@ -57,14 +61,19 @@ const textInp = document.getElementById('text');
 const titleEl = document.getElementById('chatTitle');
 const titleInput = document.getElementById('titleInput');
 const titleBtn = document.getElementById('titleBtn');
+const onlineEl = document.getElementById('onlineUsers');
 
-// Αλλαγή τίτλου
+// Change title dynamically
 titleBtn.addEventListener('click', ()=>{
   const newTitle = titleInput.value.trim();
   if(newTitle) titleEl.textContent = newTitle;
 });
 
-// Φόρτωση μηνυμάτων
+// References
+const msgsRef = ref(db, 'messages');
+let onlineRef;
+
+// Load messages
 onChildAdded(msgsRef, (snap)=>{
   const m = snap.val();
   const div = document.createElement('div');
@@ -74,7 +83,14 @@ onChildAdded(msgsRef, (snap)=>{
   messagesEl.scrollTop = messagesEl.scrollHeight;
 });
 
-// Αποστολή μηνύματος
+// Load online users
+const onlineListRef = ref(db, 'online');
+onValue(onlineListRef, snap=>{
+  const users = snap.exists() ? Object.keys(snap.val()) : [];
+  onlineEl.textContent = 'Online: ' + users.join(', ');
+});
+
+// Send message
 sendForm.addEventListener('submit', e=>{
   e.preventDefault();
   const name = nameInp.value.trim()||'Guest';
@@ -82,8 +98,14 @@ sendForm.addEventListener('submit', e=>{
   if(!text) return;
   push(msgsRef, {name,text});
   textInp.value='';
+
+  // Online presence
+  if(!onlineRef) {
+    onlineRef = ref(db, 'online/' + name);
+    set(onlineRef, true);
+    onDisconnect(onlineRef).remove();
+  }
 });
 </script>
 </body>
 </html>
-
