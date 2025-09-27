@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8" />
+<title>Chat Tolis</title>
+<style>
+body{font-family:sans-serif;display:flex;flex-direction:column;height:100vh;margin:0}
+#messages{flex:1;overflow:auto;padding:1rem}
+form{display:flex;padding:1rem;gap:.5rem}
+input,button{padding:.5rem}
+.msg{margin-bottom:.5rem;border-radius:5px;padding:.3rem;background:#eee}
+</style>
+</head>
+<body>
+<div id="messages"></div>
+<form id="sendForm">
+<input id="name" placeholder="Όνομα" required />
+<input id="text" placeholder="Μήνυμα" required />
+<button>Στάλτο</button>
+</form>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getDatabase, ref, push, onChildAdded, limitToLast } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCZDZ5kwRQPkOJVyL5QaZsnNjP7fZjegao",
+    authDomain: "my-chat-tolis.firebaseapp.com",
+    databaseURL: "https://my-chat-tolis-default-rtdb.firebaseio.com",
+    projectId: "my-chat-tolis",
+    storageBucket: "my-chat-tolis.appspot.com",
+    messagingSenderId: "1041074379087",
+    appId: "1:1041074379087:web:140f77c0c8f1240e3d4d3a"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const msgsRef = ref(db, 'messages');
+
+  const messagesEl = document.getElementById('messages');
+  const sendForm = document.getElementById('sendForm');
+  const nameInp = document.getElementById('name');
+  const textInp = document.getElementById('text');
+
+  onChildAdded(ref(db, 'messages'), (snap)=>{
+    const m = snap.val();
+    const div = document.createElement('div');
+    div.className='msg';
+    div.textContent=`${m.name}: ${m.text}`;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  });
+
+  sendForm.addEventListener('submit', e=>{
+    e.preventDefault();
+    const name = nameInp.value.trim()||'Guest';
+    const text = textInp.value.trim();
+    if(!text) return;
+    push(msgsRef, {name,text});
+    textInp.value='';
+  });
+</script>
+</body>
+</html>
