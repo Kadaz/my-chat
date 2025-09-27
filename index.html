@@ -5,15 +5,68 @@
 <title>TMG Chat</title>
 <link rel="icon" type="image/png" href="favicon.ico" />
 <style>
-body{font-family:sans-serif;display:flex;flex-direction:column;height:100vh;margin:0}
-#chatTitle{padding:1rem;text-align:center;background:#f5f5f5;margin:0;font-size:1.5rem}
-#titleInput,#titleBtn{margin:0.5rem;padding:.5rem}
-#groupSelect{margin:0.5rem;padding:.5rem}
-#messages{flex:1;overflow:auto;padding:1rem}
-form{display:flex;padding:1rem;gap:.5rem}
-input,button,select{padding:.5rem}
-.msg{margin-bottom:.5rem;border-radius:5px;padding:.3rem;background:#eee}
-#onlineUsers{padding:.5rem;text-align:center;background:#f0f0f0;font-size:0.9rem}
+body{
+  font-family:sans-serif;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  margin:0;
+  background-color: #121212; /* dark background */
+  color: #e0e0e0; /* light text */
+}
+#chatTitle{
+  background-color: #1f1f1f;
+  color: #ffffff;
+  padding:1rem;
+  text-align:center;
+}
+#titleInput,#titleBtn{
+  margin:0.5rem;
+  padding:.5rem;
+  background-color:#2c2c2c;
+  color:#e0e0e0;
+  border:1px solid #444;
+  border-radius:5px;
+}
+#groupSelect{
+  margin:0.5rem;
+  padding:.5rem;
+  background-color:#2c2c2c;
+  color:#e0e0e0;
+  border:1px solid #444;
+  border-radius:5px;
+}
+#messages{
+  flex:1;
+  overflow:auto;
+  padding:1rem;
+  background-color:#181818;
+}
+form{
+  display:flex;
+  padding:1rem;
+  gap:.5rem;
+  background-color:#1f1f1f;
+}
+input,button,select{
+  padding:.5rem;
+  background-color:#2c2c2c;
+  color:#e0e0e0;
+  border:1px solid #444;
+  border-radius:5px;
+}
+.msg{
+  margin-bottom:.5rem;
+  border-radius:5px;
+  padding:.3rem;
+  background-color:#2a2a2a;
+}
+#onlineUsers{
+  padding:.5rem;
+  text-align:center;
+  background:#1f1f1f;
+  font-size:0.9rem;
+}
 </style>
 </head>
 <body>
@@ -149,4 +202,5 @@ onValue(onlineListRef, snap=>{
 </script>
 </body>
 </html>
+
 
