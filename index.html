@@ -2,7 +2,7 @@
 <html lang="el">
 <head>
 <meta charset="utf-8" />
-<title>TMG Chat</title>
+<title>Chat Tolis</title>
 <link rel="icon" type="image/png" href="favicon.ico" />
 <style>
 body{
@@ -59,7 +59,8 @@ input,button,select{
   margin-bottom:.5rem;
   border-radius:5px;
   padding:.3rem;
-  background-color:#2a2a2a;
+  background-color:#333; /* πιο ανοιχτό background για να φαίνονται τα μηνύματα */
+  color: #fff; /* default text color */
 }
 #onlineUsers{
   padding:.5rem;
@@ -71,7 +72,7 @@ input,button,select{
 </head>
 <body>
 
-<h1 id="chatTitle">TMG Chat</h1>
+<h1 id="chatTitle">Το Chat του Tolis</h1>
 
 <div style="text-align:center">
   <input id="titleInput" placeholder="Γράψε τίτλο..." />
@@ -94,14 +95,13 @@ input,button,select{
 <form id="sendForm">
   <input id="name" placeholder="Όνομα" required />
   <input id="text" placeholder="Μήνυμα" required />
-  <button>Sent</button>
+  <button>Στάλτο</button>
 </form>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, push, onChildAdded, onValue, set, onDisconnect } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCZDZ5kwRQPkOJVyL5QaZsnNjP7fZjegao",
   authDomain: "my-chat-tolis.firebaseapp.com",
@@ -115,7 +115,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// Elements
 const messagesEl = document.getElementById('messages');
 const sendForm = document.getElementById('sendForm');
 const nameInp = document.getElementById('name');
@@ -129,19 +128,17 @@ const groupSelect = document.getElementById('groupSelect');
 let onlineRef;
 let userColor;
 
-// Change chat title
 titleBtn.addEventListener('click', ()=>{
   const newTitle = titleInput.value.trim();
   if(newTitle) titleEl.textContent = newTitle;
 });
 
-// Random color function
+// πιο ανοιχτά χρώματα για dark theme
 function getRandomColor() {
-  const colors = ['#e6194b','#3cb44b','#ffe119','#4363d8','#f58231','#911eb4','#46f0f0','#f032e6','#bcf60c','#fabebe'];
+  const colors = ['#ff6b6b','#ffd93d','#6bc1ff','#ffb86c','#c792ea','#50fa7b','#f1fa8c','#8be9fd','#ff79c6','#bd93f9'];
   return colors[Math.floor(Math.random()*colors.length)];
 }
 
-// Online presence
 nameInp.addEventListener('change', ()=>{
   const name = nameInp.value.trim()||'Guest';
   if(!onlineRef) {
@@ -152,7 +149,6 @@ nameInp.addEventListener('change', ()=>{
   }
 });
 
-// Send message
 sendForm.addEventListener('submit', e=>{
   e.preventDefault();
   const name = nameInp.value.trim()||'Guest';
@@ -166,17 +162,15 @@ sendForm.addEventListener('submit', e=>{
   textInp.value='';
 });
 
-// Load messages live for selected group
 function loadGroupMessages(group){
-  messagesEl.innerHTML = ''; // καθαρίζει προηγούμενα
+  messagesEl.innerHTML = '';
   const msgsRef = ref(db, 'groups/' + group);
   onChildAdded(msgsRef, snap=>{
     const m = snap.val();
     const div = document.createElement('div');
     div.className='msg';
-    // Πάρε χρώμα χρήστη αν υπάρχει
     onValue(ref(db, 'online/' + m.name), snapColor=>{
-      const color = snapColor.exists() ? snapColor.val().color : '#000';
+      const color = snapColor.exists() ? snapColor.val().color : '#fff';
       div.style.color = color;
     });
     div.textContent = `${m.name}: ${m.text}`;
@@ -185,22 +179,17 @@ function loadGroupMessages(group){
   });
 }
 
-// Αρχικά φορτώνουμε το default group
 loadGroupMessages(groupSelect.value);
-
-// Αν αλλάξει group, φορτώνουμε τα μηνύματα του νέου
 groupSelect.addEventListener('change', ()=>{
   loadGroupMessages(groupSelect.value);
 });
 
-// Online users live
 const onlineListRef = ref(db, 'online');
 onValue(onlineListRef, snap=>{
   const users = snap.exists() ? Object.entries(snap.val()).map(([name, val])=>`${name}`) : [];
   onlineEl.textContent = 'Online: ' + users.join(', ');
 });
 </script>
+
 </body>
 </html>
-
-
